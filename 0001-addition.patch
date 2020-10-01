@@ -1,0 +1,158 @@
+From c2124b63ca58aee0173847218274b538fba5f98b Mon Sep 17 00:00:00 2001
+From: Gaurav Singh <acad.grv97@gmail.com>
+Date: Fri, 28 Aug 2020 07:05:42 +0530
+Subject: [PATCH] addition
+
+---
+ datafeed/test.csv           |  0
+ src/DataManipulator.ts      | 32 ++++++++++++++++++++++++++++++++
+ src/DataManipulator.ts.save | 32 ++++++++++++++++++++++++++++++++
+ src/Graph.tsx               | 27 ++++++++++-----------------
+ 4 files changed, 74 insertions(+), 17 deletions(-)
+ create mode 100644 datafeed/test.csv
+ create mode 100644 src/DataManipulator.ts
+ create mode 100644 src/DataManipulator.ts.save
+
+diff --git a/datafeed/test.csv b/datafeed/test.csv
+new file mode 100644
+index 0000000..e69de29
+diff --git a/src/DataManipulator.ts b/src/DataManipulator.ts
+new file mode 100644
+index 0000000..07e0c4c
+--- /dev/null
++++ b/src/DataManipulator.ts
+@@ -0,0 +1,32 @@
++import { ServerRespond } from './DataStreamer';
++
++export interface Row {
++    price_abc: number;
++    price_def: number;
++    ratio: number;
++    timestamp: Date;
++    upper_bound: number;
++    lower_bound: number;
++    trigger_alert: number | undefined;
++}
++
++
++export class DataManipulator {
++    static generateRow(serverResponds: ServerRespond[]): Row {
++        const priceABC = (+serverResponds[0].top_ask.price + +serverResponds[0].top_bid.price)/2;
++        const priceDEF = (+serverResponds[1].top_ask.price + +serverResponds[1].top_bid.price)/2;
++        const ratio = priceABC / priceDEF;
++        const upperBound = 1 + 0.05;
++        const lowerBound = 1 - 0.05;
++        return {
++            price_abc: priceABC,
++            price_def: priceDEF,
++            ratio,
++            timestamp: serverResponds[0].timestamp > serverResponds[1].timestamp ? serverResponds[0].timestamp : serverResponds[1].timestamp,
++            upper_bound: upperBound,
++            lower_bound: lowerBound,
++            trigger_alert: (ratio > upperBound || ratio < lowerBound) ? ratio : undefined, 
++    };
++} 
++
++}
+diff --git a/src/DataManipulator.ts.save b/src/DataManipulator.ts.save
+new file mode 100644
+index 0000000..8b1a025
+--- /dev/null
++++ b/src/DataManipulator.ts.save
+@@ -0,0 +1,32 @@
++import { ServerRespond } from './DataStreamer';
++
++export interface Row {
++    price_abc: number;
++    price_def: number;
++    ratio: number;
++    timestamp: Date;
++    upper_bound: number;
++    lower_bound: number;
++    trigger_alert: number | undefined;
++}
++
++
++export class DataManipulator {
++    static generateRow(serverResponds: ServerRespond[]): Row {
++        const priceABC = (serverResponds[0].top_ask.price + serverResponds[0].top_bid.price) / 2;
++        const priceDEF = (serverResponds[1].top_ask.price + serverResponds[1].top_bid.price) / 2;
++        const ratio = priceABC / priceDEF;
++        const upperBound = 1 + 0.05;
++        const lowerBound = 1 - 0.05;
++        return {
++            price_abc: priceABC,
++            price_def: priceDEF,
++            ratio,
++            timestamp: serverRespond[0].timestamp > serverRespond[1].timestamp ? serverRespond[0].timestamp : serverRespond[1].timestamp,
++            upper_bound: upperBound,
++            lower_bound: lowerBound,
++            trigger_alert: (ratio > upperBound || ratio < lowerBound) ? ratio : undefined, 
++    };
++} 
++
++}
+diff --git a/src/Graph.tsx b/src/Graph.tsx
+index ddb7ca1..4faa2d4 100644
+--- a/src/Graph.tsx
++++ b/src/Graph.tsx
+@@ -2,7 +2,7 @@ import React, { Component } from 'react';
+ import { Table } from '@jpmorganchase/perspective';
+ import { ServerRespond } from './DataStreamer';
+ import './Graph.css';
+-
++import { DataManipulator } from './DataManipulator';
+ /**
+  * Props declaration for <Graph />
+  */
+@@ -35,10 +35,13 @@ class Graph extends Component<IProps, {}> {
+     const elem = document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
+ 
+     const schema = {
+-      stock: 'string',
+-      top_ask_price: 'float',
+-      top_bid_price: 'float',
++      price_abc: 'float',
++      price_def: 'float',
++      ratio: 'float',
+       timestamp: 'date',
++      upper_bound: 'float',
++      lower_bound: 'float',
++      trigger_alert: 'float',
+     };
+ 
+     if (window.perspective && window.perspective.worker()) {
+@@ -49,10 +52,9 @@ class Graph extends Component<IProps, {}> {
+ 
+       // Add more Perspective configurations here.
+       elem.setAttribute('view','y_line');
+-	elem.setAttribute('column-pivots','["stock"]');
+ 	elem.setAttribute('row-pivots','["timestamp"]');
+-	elem.setAttribute('columns','["top_ask_price"]');
+-	elem.setAttribute('aggregates','{"stock":"distinct count","top_ask_price":"avg","top_bid_price":"avg","timestamp":"distinct count"}');
++	elem.setAttribute('columns','["ratio","lower_bound","upper_bound","trigger_alert"]');
++	elem.setAttribute('aggregates',JSON.stringify({price_abc: 'avg', price_def: 'avg', ratio: 'avg', timestamp: 'distinct count', upper_bound: 'avg', lower_bound: 'avg', trigger_alert: 'avg',}));
+ 	elem.load(this.table);
+     }
+   }
+@@ -62,16 +64,7 @@ class Graph extends Component<IProps, {}> {
+     if (this.table) {
+       // As part of the task, you need to fix the way we update the data props to
+       // avoid inserting duplicated entries into Perspective table again.
+-      this.table.update(this.props.data.map((el: any) => {
+-        // Format the data from ServerRespond to the schema
+-	// eslint-disable-next-line
+-        return {
+-          stock: el.stock,
+-          top_ask_price: el.top_ask && el.top_ask.price,
+-          top_bid_price: el.top_bid && el.top_bid.price,
+-          timestamp: el.timestamp,
+-        };
+-      }));
++      this.table.update([DataManipulator.generateRow(this.props.data),]);
+     }
+   }
+ }
+-- 
+2.25.1
+
