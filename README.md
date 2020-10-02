@@ -24,7 +24,7 @@ To unit test the example client, run:
 
 <h2>How to request from the server using curl</h2>
 <!--See also [client.py](https://github.com/texodus/exchange_simulator/blob/master/client.py)-->
-Query:
+### Query:
 
 	$ curl 'http://localhost:8080/query?id=1'
 	{"id": "1", "top_ask": {"price": 129.18, "size": 70}, "timestamp": "2016-08-06 12:32:11.821574", "top_bid": {"price": 128.79, "size": 61}}
@@ -43,7 +43,7 @@ Implement JP Morgan Chase’s Perspective open source code in preparation for da
 <h2 id="installation" >Set up / Installation</h2>
 <p>In order to get the server and client application code working on a machine, run `npm install & npm build`
 
-<h2>How to Run</h2>
+### How to Run
 
 <p>Start the data feed server by running the python server.</p> 
 <p>Make sure terminal / command line is in the repository first before doing any of this.</p>
