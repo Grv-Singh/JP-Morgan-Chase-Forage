@@ -1,6 +1,8 @@
 # JP-Morgan-Chase-Forage
  Establishing financial data feeds and visualization for traders using Perspective framework and tools.
  
+ ### Proof of Work
+ ![](https://raw.githubusercontent.com/Grv-Singh/JP-Morgan-Chase-Forage/main/Screenshot%202020-10-02%20124524.jpg)
  <h2>How to Run</h2>
 To start the server, run
 
